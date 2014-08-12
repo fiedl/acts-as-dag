@@ -241,11 +241,11 @@ module Dag
 
       unless conf[:descendant_class_names].empty?
         self.class_eval <<-EOL35
-								def #{prefix}descendants
-									#{descendant_table_names.join(' + ')}
+								def #{prefix}descendants(reload = false)
+									#{descendant_table_names.join('(reload) + ')}(reload)
 								end
-								def #{prefix}children
-									#{child_table_names.join(' + ')}
+								def #{prefix}children(reload = false)
+									#{child_table_names.join('(reload) + ')}(reload)
 								end
         EOL35
       else
