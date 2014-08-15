@@ -191,25 +191,25 @@ module Dag
 
       unless conf[:ancestor_class_names].empty?
         self.class_eval <<-EOL25
-								def #{prefix}ancestors
-									#{ancestor_table_names.join(' + ')}
+								def #{prefix}ancestors(reload = false)
+									#{ancestor_table_names.join('(reload) + ') + '(reload)'}
 								end
-								def #{prefix}parents
-									#{parent_table_names.join(' + ')}
+								def #{prefix}parents(reload = false)
+									#{parent_table_names.join('(reload) + ') + '(reload)'}
 								end
         EOL25
       else
         self.class_eval <<-EOL26
-								def #{prefix}ancestors
+								def #{prefix}ancestors(reload = false)
 									a = []
-									#{prefix}links_as_descendant.each do |link|
+									#{prefix}links_as_descendant(reload).each do |link|
 										a << link.ancestor
 									end
 									a
 								end
-								def #{prefix}parents
+								def #{prefix}parents(reload = false)
 									a = []
-									#{prefix}links_as_child.each do |link|
+									#{prefix}links_as_child(reload).each do |link|
 										a << link.ancestor
 									end
 									a
@@ -242,24 +242,24 @@ module Dag
       unless conf[:descendant_class_names].empty?
         self.class_eval <<-EOL35
 								def #{prefix}descendants(reload = false)
-									#{descendant_table_names.join('(reload) + ')}(reload)
+									#{descendant_table_names.join('(reload) + ') + '(reload)'}
 								end
 								def #{prefix}children(reload = false)
-									#{child_table_names.join('(reload) + ')}(reload)
+									#{child_table_names.join('(reload) + ') + '(reload)'}
 								end
         EOL35
       else
         self.class_eval <<-EOL36
-								def #{prefix}descendants
+								def #{prefix}descendants(reload = false)
 									d = []
-									#{prefix}links_as_ancestor.each do |link|
+									#{prefix}links_as_ancestor(reload).each do |link|
 										d << link.descendant
 									end
 									d
 								end
-								def #{prefix}children
+								def #{prefix}children(reload = false)
 									d = []
-									#{prefix}links_as_parent.each do |link|
+									#{prefix}links_as_parent(reload).each do |link|
 										d << link.descendant
 									end
 									d
