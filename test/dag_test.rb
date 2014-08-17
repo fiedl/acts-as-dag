@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'rubygems'
-gem 'activerecord', '~> 4.0.2'
+gem 'activerecord', '~> 3.2.8'
 require "./init"
 I18n.enforce_available_locales = true
 
