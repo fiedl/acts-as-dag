@@ -2,7 +2,7 @@ source 'http://rubygems.org'
 
 gem 'bundler'
 gem 'rake'
-gem 'rails', '>= 4.0.0'
+gem 'rails', '3.2.12'
 gem 'rack'
 gem 'jeweler'
 gem 'sqlite3'

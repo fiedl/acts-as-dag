@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'rubygems'
-gem 'activerecord', '~> 4.1.0'
+gem 'activerecord', '~> 3.2.8'
 require "./init"
 I18n.enforce_available_locales = true
 
@@ -566,6 +566,54 @@ class DagTest < Test::Unit::TestCase
     assert !e.nil?
   end
 
+  #Tests update descendants
+  def test_update_descendants
+    a = BetaNode.create!
+    b = BetaNode.create!
+    e = a.descendants
+    b.parent_beta_nodes << a
+    e = a.descendants
+    assert e.empty?
+    e = a.descendants true
+    assert !e.empty?
+  end
+
+  #Tests update children
+  def test_update_children
+    a = BetaNode.create!
+    b = BetaNode.create!
+    e = a.children
+    b.parent_beta_nodes << a
+    e = a.children
+    assert e.empty?
+    e = a.children true
+    assert !e.empty?
+  end
+  
+  #Tests update parents
+  def test_update_parents
+    a = BetaNode.create!
+    b = BetaNode.create!
+    e = a.parents
+    b.child_beta_nodes << a
+    e = a.parents
+    assert e.empty?
+    e = a.parents true
+    assert !e.empty?
+  end
+  
+  #Tests update ancestors
+  def test_update_ancestors
+    a = BetaNode.create!
+    b = BetaNode.create!
+    e = a.ancestors
+    b.child_beta_nodes << a
+    e = a.ancestors
+    assert e.empty?
+    e = a.ancestors true
+    assert !e.empty?
+  end
+  
   #Tests self_and_descendants
   def test_self_and_descendants
     a = Node.create!(:name => 'a')

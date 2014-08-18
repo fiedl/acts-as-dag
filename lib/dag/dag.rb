@@ -162,8 +162,8 @@ module Dag
               has_many :#{prefix}links_as_ancestor, :as => :ancestor, :class_name => '#{dag_link_class_name}'
               has_many :#{prefix}links_as_descendant, :as => :descendant, :class_name => '#{dag_link_class_name}'
 
-              has_many :#{prefix}links_as_parent, lambda { where('#{dag_link_class.direct_column_name}' => true) }, :as => :ancestor, :class_name => '#{dag_link_class_name}'
-              has_many :#{prefix}links_as_child, lambda { where('#{dag_link_class.direct_column_name}' => true) }, :as => :descendant, :class_name => '#{dag_link_class_name}'
+              has_many :#{prefix}links_as_parent, :as => :ancestor, :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.direct_column_name}' => true}
+              has_many :#{prefix}links_as_child, :as => :descendant, :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.direct_column_name}' => true}
 
       EOL
 
@@ -172,14 +172,13 @@ module Dag
       conf[:ancestor_class_names].each do |class_name|
         table_name = class_name.tableize
         self.class_eval <<-EOL2
-                has_many :#{prefix}links_as_descendant_for_#{table_name}, lambda { where('#{dag_link_class.ancestor_type_column_name}' => '#{class_name}') }, :as => :descendant, :class_name => '#{dag_link_class_name}'
-                has_many :#{prefix}ancestor_#{table_name}, :through => :#{prefix}links_as_descendant_for_#{table_name}, :source => :ancestor, :source_type => '#{class_name}'
-                has_many :#{prefix}links_as_child_for_#{table_name}, lambda { where('#{dag_link_class.ancestor_type_column_name}' => '#{class_name}','#{dag_link_class.direct_column_name}' => true) }, :as => :descendant, :class_name => '#{dag_link_class_name}'
-                has_many :#{prefix}parent_#{table_name}, :through => :#{prefix}links_as_child_for_#{table_name}, :source => :ancestor, :source_type => '#{class_name}'
-
-              	def #{prefix}root_for_#{table_name}?
-									self.links_as_descendant_for_#{table_name}.empty?
-            		end
+          has_many :#{prefix}links_as_descendant_for_#{table_name}, :as => :descendant, :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.ancestor_type_column_name}' => '#{class_name}'}
+          has_many :#{prefix}ancestor_#{table_name}, :through => :#{prefix}links_as_descendant_for_#{table_name}, :source => :ancestor, :source_type => '#{class_name}'
+          has_many :#{prefix}links_as_child_for_#{table_name}, :as => :descendant, :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.ancestor_type_column_name}' => '#{class_name}','#{dag_link_class.direct_column_name}' => true}
+          has_many :#{prefix}parent_#{table_name}, :through => :#{prefix}links_as_child_for_#{table_name}, :source => :ancestor, :source_type => '#{class_name}'
+         	def #{prefix}root_for_#{table_name}?
+  					self.links_as_descendant_for_#{table_name}.empty?
+       		end
         EOL2
         ancestor_table_names << (prefix+'ancestor_'+table_name)
         parent_table_names << (prefix+'parent_'+table_name)
@@ -191,25 +190,25 @@ module Dag
 
       unless conf[:ancestor_class_names].empty?
         self.class_eval <<-EOL25
-								def #{prefix}ancestors
-									#{ancestor_table_names.join(' + ')}
+								def #{prefix}ancestors(reload = false)
+									#{ancestor_table_names.join('(reload) + ') + '(reload)'}
 								end
-								def #{prefix}parents
-									#{parent_table_names.join(' + ')}
+								def #{prefix}parents(reload = false)
+									#{parent_table_names.join('(reload) + ') + '(reload)'}
 								end
         EOL25
       else
         self.class_eval <<-EOL26
-								def #{prefix}ancestors
+								def #{prefix}ancestors(reload = false)
 									a = []
-									#{prefix}links_as_descendant.each do |link|
+									#{prefix}links_as_descendant(reload).each do |link|
 										a << link.ancestor
 									end
 									a
 								end
-								def #{prefix}parents
+								def #{prefix}parents(reload = false)
 									a = []
-									#{prefix}links_as_child.each do |link|
+									#{prefix}links_as_child(reload).each do |link|
 										a << link.ancestor
 									end
 									a
@@ -222,15 +221,15 @@ module Dag
       conf[:descendant_class_names].each do |class_name|
         table_name = class_name.tableize
         self.class_eval <<-EOL3
-                has_many :#{prefix}links_as_ancestor_for_#{table_name}, lambda { where('#{dag_link_class.descendant_type_column_name}' => '#{class_name}') }, :as => :ancestor, :class_name => '#{dag_link_class_name}'
-                has_many :#{prefix}descendant_#{table_name}, :through => :#{prefix}links_as_ancestor_for_#{table_name}, :source => :descendant, :source_type => '#{class_name}'
+          has_many :#{prefix}links_as_ancestor_for_#{table_name}, :as => :ancestor, :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.descendant_type_column_name}' => '#{class_name}'}
+          has_many :#{prefix}descendant_#{table_name}, :through => :#{prefix}links_as_ancestor_for_#{table_name}, :source => :descendant, :source_type => '#{class_name}'
 
-                has_many :#{prefix}links_as_parent_for_#{table_name}, lambda { where('#{dag_link_class.descendant_type_column_name}' => '#{class_name}','#{dag_link_class.direct_column_name}' => true) }, :as => :ancestor, :class_name => '#{dag_link_class_name}'
-                has_many :#{prefix}child_#{table_name}, :through => :#{prefix}links_as_parent_for_#{table_name}, :source => :descendant, :source_type => '#{class_name}'
+          has_many :#{prefix}links_as_parent_for_#{table_name}, :as => :ancestor, :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.descendant_type_column_name}' => '#{class_name}','#{dag_link_class.direct_column_name}' => true}
+          has_many :#{prefix}child_#{table_name}, :through => :#{prefix}links_as_parent_for_#{table_name}, :source => :descendant, :source_type => '#{class_name}'
 
-								def #{prefix}leaf_for_#{table_name}?
-                	self.links_as_ancestor_for_#{table_name}.empty?
-              	end
+  				def #{prefix}leaf_for_#{table_name}?
+           	self.links_as_ancestor_for_#{table_name}.empty?
+         	end
         EOL3
         descendant_table_names << (prefix+'descendant_'+table_name)
         child_table_names << (prefix+'child_'+table_name)
@@ -242,24 +241,24 @@ module Dag
       unless conf[:descendant_class_names].empty?
         self.class_eval <<-EOL35
 								def #{prefix}descendants(reload = false)
-									#{descendant_table_names.join('(reload) + ')}(reload)
+									#{descendant_table_names.join('(reload) + ') + '(reload)'}
 								end
 								def #{prefix}children(reload = false)
-									#{child_table_names.join('(reload) + ')}(reload)
+									#{child_table_names.join('(reload) + ') + '(reload)'}
 								end
         EOL35
       else
         self.class_eval <<-EOL36
-								def #{prefix}descendants
+								def #{prefix}descendants(reload = false)
 									d = []
-									#{prefix}links_as_ancestor.each do |link|
+									#{prefix}links_as_ancestor(reload).each do |link|
 										d << link.descendant
 									end
 									d
 								end
-								def #{prefix}children
+								def #{prefix}children(reload = false)
 									d = []
-									#{prefix}links_as_parent.each do |link|
+									#{prefix}links_as_parent(reload).each do |link|
 										d << link.descendant
 									end
 									d
@@ -274,8 +273,8 @@ module Dag
               has_many :#{prefix}ancestors, :through => :#{prefix}links_as_descendant, :source => :ancestor
               has_many :#{prefix}descendants, :through => :#{prefix}links_as_ancestor, :source => :descendant
 
-              has_many :#{prefix}links_as_parent, lambda { where('#{dag_link_class.direct_column_name}' => true) }, :foreign_key => '#{dag_link_class.ancestor_id_column_name}', :class_name => '#{dag_link_class_name}'
-              has_many :#{prefix}links_as_child, lambda { where('#{dag_link_class.direct_column_name}' => true) }, :foreign_key => '#{dag_link_class.descendant_id_column_name}', :class_name => '#{dag_link_class_name}'
+              has_many :#{prefix}links_as_parent, :foreign_key => '#{dag_link_class.ancestor_id_column_name}', :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.direct_column_name}' => true}
+              has_many :#{prefix}links_as_child, :foreign_key => '#{dag_link_class.descendant_id_column_name}', :class_name => '#{dag_link_class_name}', :conditions => {'#{dag_link_class.direct_column_name}' => true}
 
               has_many :#{prefix}parents, :through => :#{prefix}links_as_child, :source => :ancestor
               has_many :#{prefix}children, :through => :#{prefix}links_as_parent, :source => :descendant
